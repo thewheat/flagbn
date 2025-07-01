@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🇧🇳 FlagBN - Fly the Brunei Flag</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%; /* Responsive width */
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em; /* Responsive font size */
+        }
+
+        #flagStatus {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            color: red;
+        }
+        #flagStatus.yes{
+            color: green;            
+            font-size: 1.3em; /* Responsive font size */
+            font-weight: bold;
+        }
+        
+        .fly{
+            color: green;
+            font-weight: bold;
+        }
+
+        .upcoming{
+            background-color: #fff3cd;
+        }
+        #warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px; /* More padding for better touch target */
+            margin-top: 25px; /* More margin */
+            border-radius: 8px; /* More rounded corners */
+            text-align: left;
+        }
+
+        #warning p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        #warning strong {
+            font-size: 1.1em;
+        }
+
+        #warning ul {
+            margin-top: 10px;
+        }
+
+        #warning li {
+            margin-bottom: 8px; /* More space between list items */
+        }
+
+        #warning a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        #warning a:hover {
+            text-decoration: underline;
+        }
+
+
+        .flagDatesList ul {
+            list-style: disc; /* Use bullet points */
+            padding-left: 20px; /* Indent list items */
+            text-align: left;
+            max-width: 250px; /* Limit width for better readability */
+            margin: 0 auto; /* Center the list */
+        }
+
+        .flagDatesList li {
+            margin-bottom: 5px;
+            font-size: 1em;
+        }
+
+        #apiResponse {
+            padding: 10px;
+            background-color: #e9e9e9;
+            border-radius: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            #flagStatus {
+                font-size: 1.1em;
+            }
+
+            #warning {
+                padding: 10px;
+            }
+
+            .flagDatesList h2 {
+                font-size: 1.2em;
+            }
+
+            .flagDatesList ul {
+                padding-left: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇧🇳❓</h1>
+        <p id="flagStatus"></p>
+        
+        <div id="apiResponse">
+            Loading latest information...
+        </div>
+
+        <div id="warning" class="hidden">
+            <strong>Upcoming fly dates soon:</strong>
+            <p id="warningReason"></p>
+            <div class="flagDatesList">
+                <ul id="upcomingList"></ul>
+            </div>
+            <p>Check resources for latest details:</p>
+            <ul>
+                <li>GovBN: <a href="https://t.me/s/govbnofficial" target="_blank">Telegram: @govbnofficial</a> / <a href="https://www.instagram.com/govbn/" target="_blank">Instagram: @govbn</a></li>
+                <li>Information Department: <a href="https://www.information.gov.bn/" target="_blank">Website</a> / <a href="https://www.instagram.com/infodept.bn" target="_blank">Instagram: @infodept.bn</a></li>
+                <li>Pelita Brunei: <a href="https://www.pelitabrunei.gov.bn/" target="_blank">Website</a> / <a href="http://www.epaper.pelitabrunei.gov.bn/" target="_blank">E-Paper</a> / <a href="https://www.instagram.com/pelitabrunei" target="_blank">Instagram: @pelitabrunei</a></li>
+                <li>Borneo Bulletin: <a href="https://borneobulletin.com.bn/" target="_blank">Website</a> / <a href="https://www.instagram.com/borneobulletin/" target="_blank">Instagram: @borneobulletin</a></li>
+            </ul>
+        </div>
+        <div class="flagDatesList">
+            <h2>Official Flag Flying Dates</h2>
+            <ul id="datesList">
+            </ul>
+        </div>
+
+        <h6>This is a best effort site and relies on updating <a href="https://github.com/thewheat/flagbn">source code</a>. Initial code created with <a href="https://gemini.google.com/">Google Gemini</a></h6>
+    </div>
+
+    <script>
+
+        // Flag flying dates (Month, Day)
+        let flyDates = [
+            { month: 7, day: 15, reason: "Sultan's Birthday" }, // July 15th
+            { month: 2, day: 23, reason: "National Day" }  // February 23rd
+        ];
+
+        const flagStatusElement = document.getElementById('flagStatus');
+        const warningElement = document.getElementById('warning');
+        const warningReasonElement = document.getElementById('warningReason');
+        const datesListElement = document.getElementById('datesList');
+        const upcomingListElement = document.getElementById('upcomingList');
+
+        
+        function checkStatus(flyDates){
+            upcomingListElement.innerHTML = '';
+            datesListElement.innerHTML = '';
+                
+
+            const today = new Date();
+            // Set time to midnight for accurate date comparison
+            today.setHours(0, 0, 0, 0);
+
+            const currentMonth = today.getMonth() + 1; // getMonth() is 0-indexed
+            const currentDay = today.getDate();
+            const currentYear = today.getFullYear();
+
+
+            let shouldFly = false;
+            let showWarning = false;
+            let upcomingReasons = [];
+            let flyReasons = []
+
+            // Check if today is a flag flying date
+            for (const date of flyDates) {
+
+                const targetDateStart = new Date(date.start_year, date.start_month - 1, date.start_day);
+                targetDateStart.setHours(0, 0, 0, 0); // Set to midnight
+                
+                const targetDateEnd = new Date(date.end_year, date.end_month - 1, date.end_day);
+                targetDateEnd.setHours(0, 0, 0, 0); // Set to midnight
+
+                if (targetDateStart >= today && today <= targetDateEnd) {
+                    shouldFly = true;
+                    flyReasons.push(date);
+                    continue;
+                }
+
+                if (currentMonth === date.month && currentDay === date.day) {
+                    shouldFly = true;
+                    flyReasons.push(date);
+                    continue;
+                }
+            }
+
+            // Check for warning period (2 weeks before)
+            const twoWeeksInMs = 14 * 24 * 60 * 60 * 1000;
+
+            for (const date of flyDates) {
+                if(flyReasons.indexOf(date) !== -1) continue;
+                // Create a target date for the current year
+                const targetDate = new Date(currentYear, date.month - 1, date.day);
+                targetDate.setHours(0, 0, 0, 0); // Set to midnight
+
+                const warningStartDate = new Date(targetDate.getTime() - twoWeeksInMs);
+                warningStartDate.setHours(0, 0, 0, 0); // Set to midnight
+
+                // This logic correctly handles the calculation of warningStartDate for the given fixed dates.
+                // The comparison `today >= warningStartDate && today < targetDate` correctly determines if today falls within this window.
+                if (today >= warningStartDate && today < targetDate) {
+                    upcomingReasons.push(date);
+                    showWarning = true;
+                    break; // Exit loop once a warning is found
+                }
+            }
+
+            // Populate the list of flag flying dates
+
+            if (shouldFly) {
+                flagStatusElement.textContent = "👍 Yes! Brunei flag should be flown 🇧🇳";
+                flagStatusElement.classList.add('yes');
+            } else {
+                flagStatusElement.textContent = "Brunei flag likely not to be flown today.";
+                flagStatusElement.classList.remove('yes');
+            }
+
+            if (showWarning) {
+                warningElement.classList.remove('hidden');
+                warningReasonElement.textContent = '';
+
+                upcomingReasons.forEach(date => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = formatDate(date);
+                    upcomingListElement.appendChild(listItem);
+                });                
+            }
+            else {
+                warningElement.classList.add('hidden');
+            }
+
+            displayDates(flyDates, flyReasons, upcomingReasons);
+        }
+        function dateKey(date){
+            return date.month + "-" + date.day
+        }
+        function displayDates(flyDates, flyReasons, upcomingReasons){
+            // sort by date
+            flyDates.sort(function(a,b) { return new Date("2025", a.month-1, a.day) - new Date("2025", b.month-1, b.day)})
+            let fly = flyReasons.map(date => { return dateKey(date); })
+            let upcoming = upcomingReasons.map(date => { return dateKey(date); })
+
+            flyDates.forEach(date => {
+                const listItem = document.createElement('li');
+                const key = dateKey(date)
+                if(fly.indexOf(key) !== -1)
+                    listItem.classList.add('fly');
+                if(upcoming.indexOf(key) !== -1)
+                    listItem.classList.add('upcoming');
+                listItem.innerHTML = formatDate(date)
+                datesListElement.appendChild(listItem);
+            });            
+        }
+        function formatDate(date){
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                                "July", "August", "September", "October", "November", "December"];
+            let str = `${monthNames[date.month - 1]} ${date.day}: ${date.reason}`;
+            if (date.start_day && date.start_month && date.start_year && 
+                date.end_day && date.end_month && date.end_year)
+                str += `<BR>(${monthNames[date.start_month - 1]} ${date.start_day} - ${monthNames[date.end_month - 1]} ${date.end_day})`;
+            if (date.source)
+                str += ` <a href="${date.source}">Source</a>`;  
+            return str;
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStatus(flyDates);
+            const apiResponseElement = document.getElementById('apiResponse');
+
+            // Function to fetch data from an external API automatically on load
+            async function fetchLatestData() {
+                apiResponseElement.textContent = 'Loading latest information...';
+                try {
+                    // Using a public placeholder API for demonstration
+                    const response = await fetch('updates.json');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    apiResponseElement.classList.add('hidden');
+                    const apiDates = await response.json();
+
+                    let spliceDates = apiDates.map(date => { return dateKey(date); });
+                    flyDatesNew = flyDates.filter( (date, i) => {
+                        return spliceDates.indexOf(dateKey(date)) == -1
+                    });
+                    flyDates = flyDatesNew.concat(apiDates);
+
+                    checkStatus(flyDates);
+                } catch (error) {
+                    apiResponseElement.textContent = `ERROR: Could not retrieve latest information`;
+                    apiResponseElement.classList.remove('hidden');
+                    console.error("Error fetching data:", error);
+                }
+            }
+
+            fetchLatestData(); // Call the function to fetch data on page load
+
+        });
+    </script>
+</body>
+</html>
