@@ -216,7 +216,7 @@
                 const targetDateEnd = new Date(date.end_year, date.end_month - 1, date.end_day);
                 targetDateEnd.setHours(0, 0, 0, 0); // Set to midnight
 
-                if (targetDateStart >= today && today <= targetDateEnd) {
+                if (targetDateStart <= today && today <= targetDateEnd) {
                     shouldFly = true;
                     flyReasons.push(date);
                     continue;
