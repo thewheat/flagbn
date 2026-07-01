@@ -235,7 +235,7 @@
             for (const date of flyDates) {
                 if(flyReasons.indexOf(date) !== -1) continue;
                 // Create a target date for the current year
-                const targetDate = new Date(currentYear, date.month - 1, date.day);
+                const targetDate = new Date(date.start_year ? date.start_year : currentYear, date.month - 1, date.day);
                 targetDate.setHours(0, 0, 0, 0); // Set to midnight
 
                 const warningStartDate = new Date(targetDate.getTime() - twoWeeksInMs);
@@ -302,7 +302,7 @@
             let str = `${monthNames[date.month - 1]} ${date.day}: ${date.reason}`;
             if (date.start_day && date.start_month && date.start_year && 
                 date.end_day && date.end_month && date.end_year)
-                str += `<BR>(${monthNames[date.start_month - 1]} ${date.start_day} - ${monthNames[date.end_month - 1]} ${date.end_day})`;
+                str += `<BR>(${date.start_year}: ${monthNames[date.start_month - 1]} ${date.start_day} - ${monthNames[date.end_month - 1]} ${date.end_day})`;
             if (date.source)
                 str += ` <a href="${date.source}">Source</a>`;  
             return str;
